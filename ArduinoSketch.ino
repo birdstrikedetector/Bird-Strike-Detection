@@ -27,15 +27,16 @@ void setup() {
     Serial.println("Ping failed!");
   }
 
-  saveVideo();
+
+  getHealth();
+
 }
 
 void loop() {
-  //sendMessage("Hello Raspberry PI!!");
-
-  //getHealth();
+  // Insert Accelometer Detection Code
+  // When accelometer is triggered:
+  // delay (10000); this makes it so that the buffer on Raspberry PI 5 includes 20 seconds prior to trigger and 10 seconds after
   //saveVideo();
-  //delay(10000);
 }
 
 // Connect to WiFi
@@ -56,17 +57,6 @@ void connectWifi() {
   }
   Serial.println("\nWiFi connected!");
 }
-
-void sendMessage(String message) {
-  client.beginRequest();
-  client.post("/message");
-  client.sendHeader("Content-Type", "text/plain");
-  client.sendHeader("Content-Length", message.length());
-  client.beginBody();
-  client.print(message);
-  client.endRequest();  
-}
-
 
 void saveVideo() {
   client.post("/save");
