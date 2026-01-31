@@ -13,6 +13,8 @@ from flask import Flask, request, jsonify
 # -------------- CONFIG --------------
 BUFFER_SECONDS = 30        # seconds of video history to keep
 TARGET_FPS     = 20        # approximate capture FPS
+POST_SECONDS = 10   # seconds to include AFTER /save is called
+
 MAX_FRAMES     = BUFFER_SECONDS * TARGET_FPS
 VIDEO_DIR      = "videos"
 
@@ -111,6 +113,8 @@ def save_clip():
         }), 429
 
     try:
+
+        time.sleep(POST_SECONDS)
         
         with buffer_lock:
             frames = list(frame_buffer)
