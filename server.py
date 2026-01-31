@@ -31,6 +31,9 @@ camera.Open()
 # Set resolution / FPS
 camera.Width.Value  = 1920 #max = 2616
 camera.Height.Value = 1080 #max = 1960
+
+camera.ExposureTime.SetValue(12000) # 5000 microseconds = 5 miliseconds
+
 camera.AcquisitionFrameRateEnable.Value = True
 camera.AcquisitionFrameRate.Value       = TARGET_FPS
 
@@ -177,6 +180,7 @@ def save_clip():
 @app.route("/health", methods=["GET"])
 def health():
     """Simple endpoint to check the service is alive."""
+    print("ALIVE")
     with buffer_lock:
         n = len(frame_buffer)
     return jsonify({"status": "running", "buffer_frames": n}), 200
