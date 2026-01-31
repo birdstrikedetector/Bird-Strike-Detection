@@ -12,15 +12,15 @@ SCOPES = ['https://www.googleapis.com/auth/drive.file']
 def get_drive_service():
     """Authenticate and return a Google Drive service object."""
     creds = None
-    if os.path.exists('../token.json'):
-        creds = Credentials.from_authorized_user_file('../token.json', SCOPES)
+    if os.path.exists('../../token.json'):
+        creds = Credentials.from_authorized_user_file('../../token.json', SCOPES)
     # If no (valid) credentials, go through OAuth flow
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                '../credentials.json', SCOPES)
+                '../../credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open('../token.json', 'w') as token:
