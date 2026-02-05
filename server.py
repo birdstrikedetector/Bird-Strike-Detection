@@ -34,7 +34,7 @@ camera.Open()
 camera.Width.Value  = 1920 #max = 2616
 camera.Height.Value = 1080 #max = 1960
 
-camera.ExposureTime.SetValue(16000) # 5000 microseconds = 5 miliseconds. 60fps
+camera.ExposureTime.SetValue(5000) # 5000 microseconds = 5 miliseconds. 60fps
 
 camera.AcquisitionFrameRateEnable.Value = True
 camera.AcquisitionFrameRate.Value       = TARGET_FPS
