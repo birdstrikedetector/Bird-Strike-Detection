@@ -6,7 +6,7 @@ import os
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SERVICE_ACCOUNT_FILE = os.path.join("/home/a/Documents/ceployment/service_account.json")
+SERVICE_ACCOUNT_FILE = os.path.join("/home/a/Documents/deployment/service_account.json")
 
 # Put the folder ID here, or set DRIVE_FOLDER_ID in the environment
 DEFAULT_FOLDER_ID = "18wAzRACHu5is24Ffog21nCS1BirP30-G"
