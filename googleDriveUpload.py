@@ -1,56 +1,64 @@
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-
+from google.oauth2 import service_account
 import os
 
-# If modifying these scopes, delete token.json.
-SCOPES = ['https://www.googleapis.com/auth/drive.file']
+SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, "service_account.json")
+
+# Put the folder ID here, or set DRIVE_FOLDER_ID in the environment
+DEFAULT_FOLDER_ID = ""
 
 def get_drive_service():
-    """Authenticate and return a Google Drive service object."""
-    creds = None
-    if os.path.exists('../../token.json'):
-        creds = Credentials.from_authorized_user_file('../../token.json', SCOPES)
-    # If no (valid) credentials, go through OAuth flow
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                '../../credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open('../../token.json', 'w') as token:
-            token.write(creds.to_json())
+    """
+    Authenticate with a service account and return a Google Drive service object.
+    """
+    if not os.path.exists(SERVICE_ACCOUNT_FILE):
+        raise FileNotFoundError(
+            f"Service account key file not found: {SERVICE_ACCOUNT_FILE}"
+        )
 
-    service = build('drive', 'v3', credentials=creds)
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE,
+        scopes=SCOPES,
+    )
+
+    service = build("drive", "v3", credentials=creds)
     return service
 
-def upload_to_drive(file_path, folder_id=None):
+def upload_to_drive(file_path):
     """
-    Upload a file to Google Drive.
-    If folder_id is provided, upload into that folder.
-    Returns the file ID.
+    Upload a file to Google Drive using a service account.
+    The target folder must be shared with the service account email.
+    Returns the uploaded file ID.
     """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File does not exist: {file_path}")
+
     service = get_drive_service()
 
-    file_metadata = {
-        'name': os.path.basename(file_path)
-    }
-    if folder_id:
-        file_metadata['parents'] = [folder_id]
+    folder_id = DEFAULT_FOLDER_ID
 
-    media = MediaFileUpload(file_path, mimetype='video/x-msvideo', resumable=True)
+    file_metadata = {
+        "name": os.path.basename(file_path),
+        "parents": [folder_id],
+    }
+
+    media = MediaFileUpload(
+        file_path,
+        mimetype="video/x-msvideo",
+        resumable=True,
+    )
 
     file = service.files().create(
         body=file_metadata,
         media_body=media,
-        fields='id'
+        fields="id, name, parents",
+        supportsAllDrives=True,
     ).execute()
 
-    file_id = file.get('id')
-    print(f"✅ Uploaded to Drive. File ID: {file_id}")
+    file_id = file["id"]
+    print(f"Uploaded to Drive. File ID: {file_id}")
     return file_id
