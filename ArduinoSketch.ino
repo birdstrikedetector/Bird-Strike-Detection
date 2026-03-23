@@ -38,7 +38,7 @@ void readAccel(){
   // Check if the z-axis value exceeds 0.1
   if (event.acceleration.z > 0.12 || event.acceleration.z < -0.12) {
     // Send alert to Raspberry PI to save buffer
-    saveVideo();
+    saveVideo(event.acceleration.x, event.acceleration.y, event.acceleration.z, mag);
 
     //Flashing Onboard LED
     int count = 0;
@@ -68,11 +68,26 @@ void connectWifi() {
   }
 }
 
-void saveVideo() {
+void saveVideo(float x, float y, float z, float mag) {
+  String body = "{\"device_id\":\"" + WiFi.macAddress().replace(":", "")  + "","
+                "\"x\":" + String(x, 3) + ","
+                "\"y\":" + String(y, 3) + ","
+                "\"z\":" + String(z, 3) + ","
+                "\"mag\":" + String(mag, 3) + "}";
+  
+  client.beginRequest();
   client.post("/save");
+  client.sendHeader("Content-Type", "application/json");
+  client.sendHeader("Content-Length", body.length());
+  client.beginBody();
+  client.print(body);
+  client.endRequest();
+
   int statusCode = client.responseStatusCode();
   String response = client.responseBody();
 }
+
+
 
 // GET to /health, tests connection with Raspberry PI, print response
 void getHealth() {
