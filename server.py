@@ -4,6 +4,7 @@ from collections import deque
 import threading
 import time
 import os
+import json
 from datetime import datetime
 
 from googleDriveUpload import upload_to_drive
@@ -113,8 +114,17 @@ def save_clip():
         }), 429
 
     try:
+        # Before the video clip is saved, process the data submitted from the POST
+        data = request.get_json(silent=True) or {}
 
+        device_id = data.get("device_id", "unknown")
+        x = data.get("x")
+        y = data.get("y")
+        z = data.get("z")
+        mag = data.get("mag")
         time.sleep(POST_SECONDS)
+
+        # Process Video
         
         with buffer_lock:
             frames = list(frame_buffer)
@@ -139,7 +149,24 @@ def save_clip():
         # Output file name
         timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename      = os.path.join(VIDEO_DIR, f"clip_{timestamp_str}.avi")
-    
+
+        # Generate MetaData File
+        metadata_file = filename.replace(".avi", ".json")
+
+        metadata = {
+            "device_id": device_id,
+            "timestamp": timestamp_str,
+            "x": x,
+            "y": y,
+            "z": z,
+            "mag": mag,
+            "video_file": filename
+        }
+        
+        with open(metadata_file, "w") as f:
+            json.dump(metadata, f, indent=2)
+
+        
         print(f"Saving {len(frames)} frames (~{duration:.1f}s) at {fps:.1f} fps to:")
         print(" ", filename)
     
@@ -160,14 +187,14 @@ def save_clip():
     
         out.release()
         print(f"Saved clip: {filename}  ({len(frames)} frames, ~{duration:.1f}s, {fps:.1f} fps)")
-    
+
         try:
             # If you have a specific folder, put its ID here:
             # folder_id = "YOUR_FOLDER_ID"
             # file_id = upload_to_drive(filename, folder_id=folder_id)
             file_id = upload_to_drive(filename)
         except Exception as e:
-            print("Error uploading to Google Drive:", e)
+            print("Error uploading video to Google Drive:", e)
             return jsonify({
                 "status":        "saved_but_upload_failed",
                 "file":          filename,
@@ -176,7 +203,19 @@ def save_clip():
                 "fps":           fps,
                 "upload_error":  str(e),
             }), 500
-    
+
+        try:
+            # If you have a specific folder, put its ID here:
+            # folder_id = "YOUR_FOLDER_ID"
+            # file_id = upload_to_drive(filename, folder_id=folder_id)
+            file_id_meta  = upload_to_drive(metadata_file)
+        except Exception as e:
+            print("Error uploading metadata to Google Drive:", e)
+            return jsonify({
+                "status":        "saved_but_upload_failed",
+                "upload_error":  str(e),
+            }), 500
+
         # Optional: delete video after sending
         # try:
         #     os.remove(file_path)
