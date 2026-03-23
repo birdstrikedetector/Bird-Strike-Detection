@@ -38,6 +38,11 @@ void readAccel(){
   // Check if the z-axis value exceeds 0.1
   if (event.acceleration.z > 0.12 || event.acceleration.z < -0.12) {
     // Send alert to Raspberry PI to save buffer
+    float mag = sqrt(
+      event.acceleration.x * event.acceleration.x +
+      event.acceleration.y * event.acceleration.y +
+      event.acceleration.z * event.acceleration.z
+    );
     saveVideo(event.acceleration.x, event.acceleration.y, event.acceleration.z, mag);
 
     //Flashing Onboard LED
