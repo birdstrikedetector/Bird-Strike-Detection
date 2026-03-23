@@ -1,86 +1,85 @@
-#include <WiFiNINA.h>
-#include <ArduinoHttpClient.h>
+#include <WiFiNINA.h> // Connect to Wifi
+#include <ArduinoHttpClient.h> // Used to GET/POST via HTTP 
 
-WiFiClient wifiClient;
+// Packages used by Carr et al. to connect Accelerometer
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_ADXL345_U.h>
 
-const char* ssid = "AirPennNet-Device";
-const char* password = "penn1740wifi";
+const int ledPin = 13; // LED Indicator
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(); // Accelerometer client
 
+const char* ssid = "AirPennNet-Device"; // Wifi username
+const char* password = "penn1740wifi"; // Wifi password 
 
-const char testPing[] = "test.mosquitto.org"; // Arduino Nano pings this address to ensure Wifi is connected
-
-HttpClient client(wifiClient, "10.103.222.105", 80);  // your Pi IP, port
+WiFiClient wifiClient; // Stores client for Wifi connection
+HttpClient client(wifiClient, "10.103.199.147", 8000);  // your Pi IP, port; Uses the WiFi client to talk to the server running at 10.103.222.105 on port 8000, using HTTP
 
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
-  while (!Serial); // Wait for Serial monitor
-  Serial.println("Starting...");
+  connectWifi(); // Calls function to connect to Wifi
+  getHealth(); // Test connection with Raspberry PI
+  
+  saveVideo();
+  //pinMode(ledPin, OUTPUT);
 
-  connectWifi();
-  long pingResult = WiFi.ping(testPing);
-  if (pingResult >= 0) {
-    Serial.print("Ping successful! RTT = ");
-    Serial.print(pingResult);
-    Serial.println(" ms");
-  } else {
-    Serial.println("Ping failed!");
-  }
-
-
-  getHealth();
-
+  //while(!accel.begin()); // Wait for accelerometer to connect
 }
 
 void loop() {
-  // Insert Accelometer Detection Code
-  // When accelometer is triggered:
-  // delay (10000); this makes it so that the buffer on Raspberry PI 5 includes 20 seconds prior to trigger and 10 seconds after
-  //saveVideo();
+  readAccel(); // Read accelerometer
+  //delay(500); // Small delay before the next reading 
+}
+
+// read accelerometer, if significant, send message to PI
+void readAccel(){
+  sensors_event_t event; 
+  accel.getEvent(&event);
+
+  // Check if the z-axis value exceeds 0.1
+  if (event.acceleration.z > 0.12 || event.acceleration.z < -0.12) {
+    // Send alert to Raspberry PI to save buffer
+    saveVideo();
+
+    //Flashing Onboard LED
+    int count = 0;
+    while (count < 6) {
+      digitalWrite(ledPin, HIGH);
+      delay(300);
+      digitalWrite(ledPin, LOW);
+      delay(300);
+      count++;
+    }
+    
+    delay(60000); // Delay to prevent sending multiple emails for the same thump
+  }
 }
 
 // Connect to WiFi
 void connectWifi() {
-  Serial.print("Connecting to WiFi: ");
-  Serial.println(ssid);
   WiFi.begin(ssid, password);
 
   int retries = 0;
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    Serial.print(".");
     retries++;
     if (retries > 20) {
-      Serial.println("Failed to connect to WiFi.");
       return;
     }
   }
-  Serial.println("\nWiFi connected!");
 }
 
 void saveVideo() {
   client.post("/save");
   int statusCode = client.responseStatusCode();
   String response = client.responseBody();
-
-  Serial.print("Status code: ");
-  Serial.println(statusCode);
-
-  Serial.print("Response: ");
-  Serial.println(response);
 }
 
+// GET to /health, tests connection with Raspberry PI, print response
 void getHealth() {
   client.get("/health");
 
   int statusCode = client.responseStatusCode();
   String response = client.responseBody();
-
-  Serial.print("Status code: ");
-  Serial.println(statusCode);
-
-  Serial.print("Response: ");
-  Serial.println(response);
 
   client.stop();
 }
