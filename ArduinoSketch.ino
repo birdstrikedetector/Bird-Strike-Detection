@@ -74,12 +74,17 @@ void connectWifi() {
 }
 
 void saveVideo(float x, float y, float z, float mag) {
-  String body = "{\"device_id\":\"" + WiFi.macAddress().replace(":", "")  + "","
-                "\"x\":" + String(x, 3) + ","
-                "\"y\":" + String(y, 3) + ","
-                "\"z\":" + String(z, 3) + ","
-                "\"mag\":" + String(mag, 3) + "}";
-  
+  String mac = WiFi.macAddress();
+  mac.replace(":", "");  // clean MAC
+
+  String body = "{";
+  body += "\"device_id\":\"" + mac + "\",";
+  body += "\"x\":" + String(x, 3) + ",";
+  body += "\"y\":" + String(y, 3) + ",";
+  body += "\"z\":" + String(z, 3) + ",";
+  body += "\"mag\":" + String(mag, 3);
+  body += "}";
+
   client.beginRequest();
   client.post("/save");
   client.sendHeader("Content-Type", "application/json");
@@ -90,6 +95,8 @@ void saveVideo(float x, float y, float z, float mag) {
 
   int statusCode = client.responseStatusCode();
   String response = client.responseBody();
+
+  Serial.println(body); // DEBUG: see what you're sending
 }
 
 
