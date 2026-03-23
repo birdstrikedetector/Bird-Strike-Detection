@@ -19,10 +19,10 @@ void setup() {
   connectWifi(); // Calls function to connect to Wifi
   getHealth(); // Test connection with Raspberry PI
   
-  saveVideo();
-  //pinMode(ledPin, OUTPUT);
+  //saveVideo();
+  pinMode(ledPin, OUTPUT);
 
-  //while(!accel.begin()); // Wait for accelerometer to connect
+  while(!accel.begin()); // Wait for accelerometer to connect
 }
 
 void loop() {
@@ -55,7 +55,7 @@ void readAccel(){
       count++;
     }
     
-    delay(60000); // Delay to prevent sending multiple emails for the same thump
+    delay(20000); // Delay to prevent sending multiple emails for the same thump
   }
 }
 
