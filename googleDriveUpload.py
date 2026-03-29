@@ -19,9 +19,8 @@ def get_drive_service():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                '../../credentials.json', SCOPES)
-            creds = flow.run_local_server( host="localhost", port=8080, open_browser=False)
+            flow = InstalledAppFlow.from_client_secrets_file('../../credentials.json', SCOPES)
+            creds = flow.run_local_server(host="localhost", port=8080, open_browser=False)
         # Save the credentials for the next run
         with open('../../token.json', 'w') as token:
             token.write(creds.to_json())
