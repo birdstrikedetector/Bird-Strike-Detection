@@ -31,6 +31,9 @@ CSV_FIELDS = [
     "x",
     "y",
     "z",
+    "rms_z",
+    "peak_abs_dz",
+    "peak_signed_dz",
     "video_file",
     "drive_file_id",
     "status",
@@ -186,6 +189,9 @@ REVIEW_TEMPLATE = """
         <th>x</th>
         <th>y</th>
         <th>z</th>
+        <th>rms_z</th>
+        <th>peak_abs_dz</th>
+        <th>peak_signed_dz</th>
         <th>video_file</th>
         <th>drive_file_id</th>
         <th>status</th>
@@ -204,6 +210,9 @@ REVIEW_TEMPLATE = """
           <td>{{ row["x"] }}</td>
           <td>{{ row["y"] }}</td>
           <td>{{ row["z"] }}</td>
+          <td>{{ row["rms_z"] }}</td>
+          <td>{{ row["peak_abs_dz"] }}</td>
+          <td>{{ row["peak_signed_dz"] }}</td>
           <td>{{ row["video_file"] }}</td>
           <td>{{ row["drive_file_id"] }}</td>
 
@@ -254,6 +263,9 @@ def save_clip():
         x = data.get("x", "")
         y = data.get("y", "")
         z = data.get("z", "")
+        rms_z = data.get("rms_z", "")
+        peak_abs_dz = data.get("peak_abs_dz", "")
+        peak_signed_dz = data.get("peak_signed_dz", "")
 
         time.sleep(POST_SECONDS)
 
@@ -316,6 +328,9 @@ def save_clip():
             "x": x,
             "y": y,
             "z": z,
+            "rms_z": rms_z,
+            "peak_abs_dz": peak_abs_dz,
+            "peak_signed_dz": peak_signed_dz,
             "video_file": filename,
             "drive_file_id": drive_file_id,
             "status": "unknown",
