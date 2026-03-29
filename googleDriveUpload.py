@@ -5,6 +5,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 import os
+import mimetypes
 
 # If modifying these scopes, delete token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
@@ -46,7 +47,11 @@ def upload_to_drive(file_path, folder_id=None):
 	if folder_id:
 		file_metadata['parents'] = [folder_id]
 
-	media = MediaFileUpload(file_path, mimetype='video/x-msvideo', resumable=True)
+	mime_type, _ = mimetypes.guess_type(file_path)
+	if mime_type is None:
+	    mime_type = "application/octet-stream"
+	
+	media = MediaFileUpload(file_path, mimetype=mime_type, resumable=True)
 
 	file = service.files().create(
 		body=file_metadata,
