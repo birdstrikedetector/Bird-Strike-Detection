@@ -349,17 +349,17 @@ def save_clip():
 
         append_event_to_csv(metadata)
 
-        try:
-            os.remove(filename)
-            print(f"Deleted local video file: {filename}")
-        except Exception as e:
-            print(f"Could not delete local video file: {e}")
+        # try:
+        #     os.remove(filename)
+        #     print(f"Deleted local video file: {filename}")
+        # except Exception as e:
+        #     print(f"Could not delete local video file: {e}")
 
-        try:
-            os.remove(metadata_file)
-            print(f"Deleted local metadata file: {metadata_file}")
-        except Exception as e:
-            print(f"Could not delete local metadata file: {e}")
+        # try:
+        #     os.remove(metadata_file)
+        #     print(f"Deleted local metadata file: {metadata_file}")
+        # except Exception as e:
+        #     print(f"Could not delete local metadata file: {e}")
 
         return jsonify({
             "status": "ok",
