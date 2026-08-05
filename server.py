@@ -68,7 +68,7 @@ camera.Open()
 camera.Width.Value  = 1280
 camera.Height.Value = 720
 
-camera.ExposureTime.SetValue(5000)
+camera.ExposureTime.SetValue(10000)
 camera.AcquisitionFrameRateEnable.Value = True
 camera.AcquisitionFrameRate.Value       = TARGET_FPS
 
