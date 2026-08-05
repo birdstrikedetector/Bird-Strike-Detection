@@ -18,7 +18,8 @@ BUFFER_SECONDS = 30
 TARGET_FPS     = 20
 POST_SECONDS   = 10
 
-MAX_FRAMES     = BUFFER_SECONDS * TARGET_FPS
+# MAX_FRAMES     = BUFFER_SECONDS * TARGET_FPS
+MAX_FRAMES = (BUFFER_SECONDS + POST_SECONDS + 5) * TARGET_FPS
 VIDEO_DIR      = "videos"
 CSV_FILE       = "../events.csv"
 
@@ -61,8 +62,12 @@ print("Initializing camera...")
 camera = pylon.InstantCamera(pylon.TlFactory.GetInstance().CreateFirstDevice())
 camera.Open()
 
-camera.Width.Value  = 1920
-camera.Height.Value = 1080
+# camera.Width.Value  = 1920
+# camera.Height.Value = 1080
+
+camera.Width.Value  = 1280
+camera.Height.Value = 720
+
 camera.ExposureTime.SetValue(5000)
 camera.AcquisitionFrameRateEnable.Value = True
 camera.AcquisitionFrameRate.Value       = TARGET_FPS
@@ -98,7 +103,9 @@ def camera_capture_loop():
                 frame = image.GetArray()
                 ts = time.time()
 
-                ok, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+                # ok, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+                ok, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 40])
+
                 if ok:
                     with buffer_lock:
                         frame_buffer.append((ts, enc))
@@ -267,10 +274,24 @@ def save_clip():
         peak_abs_dz = data.get("peak_abs_dz", "")
         peak_signed_dz = data.get("peak_signed_dz", "")
 
-        time.sleep(POST_SECONDS)
+        # time.sleep(POST_SECONDS)
 
+        # with buffer_lock:
+        #     frames = list(frame_buffer)
+
+        trigger_time = time.time()
+
+        time.sleep(POST_SECONDS)
+        
+        window_start = trigger_time - BUFFER_SECONDS
+        window_end = trigger_time + POST_SECONDS
+        
         with buffer_lock:
-            frames = list(frame_buffer)
+            frames = [
+                (ts, enc)
+                for ts, enc in frame_buffer
+                if window_start <= ts <= window_end
+            ]
 
         if not frames:
             return jsonify({"error": "No frames in buffer"}), 400
