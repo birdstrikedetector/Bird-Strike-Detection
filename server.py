@@ -58,23 +58,40 @@ OUTCOME_CHOICES = [
 ]
 
 # -------------- CAMERA SETUP --------------
+camera = None
+converter = None
+camera_available = False
+
 print("Initializing camera...")
-camera = pylon.InstantCamera(pylon.TlFactory.GetInstance().CreateFirstDevice())
-camera.Open()
 
-# camera.Width.Value  = 1920
-# camera.Height.Value = 1080
+try:
+    camera = pylon.InstantCamera(
+        pylon.TlFactory.GetInstance().CreateFirstDevice()
+    )
+    camera.Open()
 
-camera.Width.Value  = 1280
-camera.Height.Value = 720
+    camera.Width.Value = 1920
+    camera.Height.Value = 1080
+    camera.ExposureTime.SetValue(5000)
 
-camera.ExposureTime.SetValue(10000)
-camera.AcquisitionFrameRateEnable.Value = True
-camera.AcquisitionFrameRate.Value       = TARGET_FPS
+    camera.AcquisitionFrameRateEnable.Value = True
+    camera.AcquisitionFrameRate.Value = TARGET_FPS
 
-converter = pylon.ImageFormatConverter()
-converter.OutputPixelFormat  = pylon.PixelType_BGR8packed
-converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
+    converter = pylon.ImageFormatConverter()
+    converter.OutputPixelFormat = pylon.PixelType_BGR8packed
+    converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
+
+    camera_available = True
+    print("Camera connected.")
+
+except Exception as e:
+    print("WARNING: Camera not available.")
+    print("Server will start without camera.")
+    print("Camera error:", e)
+
+    camera = None
+    converter = None
+    camera_available = False
 
 # -------------- RING BUFFER --------------
 frame_buffer = deque(maxlen=MAX_FRAMES)
@@ -87,13 +104,20 @@ capture_running = True
 def camera_capture_loop():
     global capture_running
 
-    camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
-    print("Camera capture loop started...")
+    if not camera_available or camera is None:
+        print("Camera capture thread not started: no camera available.")
+        return
 
     try:
+        camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
+        print("Camera capture loop started...")
+
         while capture_running and camera.IsGrabbing():
             try:
-                grab_result = camera.RetrieveResult(1000, pylon.TimeoutHandling_ThrowException)
+                grab_result = camera.RetrieveResult(
+                    1000,
+                    pylon.TimeoutHandling_ThrowException
+                )
             except Exception as e:
                 print("Error in RetrieveResult:", e)
                 continue
@@ -103,22 +127,36 @@ def camera_capture_loop():
                 frame = image.GetArray()
                 ts = time.time()
 
-                # ok, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
-                ok, enc = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 40])
+                ok, enc = cv2.imencode(
+                    ".jpg",
+                    frame,
+                    [int(cv2.IMWRITE_JPEG_QUALITY), 60]
+                )
 
                 if ok:
                     with buffer_lock:
                         frame_buffer.append((ts, enc))
                 else:
                     print("JPEG encode failed")
+
             else:
                 print("Grab failed:", grab_result.ErrorDescription)
 
             grab_result.Release()
 
+    except Exception as e:
+        print("Camera capture loop error:", e)
+
     finally:
-        camera.StopGrabbing()
-        camera.Close()
+        if camera is not None:
+            try:
+                if camera.IsGrabbing():
+                    camera.StopGrabbing()
+                if camera.IsOpen():
+                    camera.Close()
+            except Exception as e:
+                print("Error closing camera:", e)
+
         print("Camera capture loop stopped.")
 
 capture_thread = threading.Thread(target=camera_capture_loop, daemon=True)
