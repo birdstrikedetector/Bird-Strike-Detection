@@ -295,6 +295,12 @@ REVIEW_TEMPLATE = """
 
 @app.route("/save", methods=["POST"])
 def save_clip():
+    if not camera_available:
+        return jsonify({
+            "status": "camera_unavailable",
+            "message": "Server is running, but no camera is connected."
+        }), 503
+
     if not save_lock.acquire(blocking=False):
         return jsonify({
             "status": "busy",
@@ -437,7 +443,12 @@ def save_clip():
 def health():
     with buffer_lock:
         n = len(frame_buffer)
-    return jsonify({"status": "running", "buffer_frames": n}), 200
+
+    return jsonify({
+        "status": "running",
+        "camera_available": camera_available,
+        "buffer_frames": n
+    }), 200
 
 @app.route("/review", methods=["GET"])
 def review():
