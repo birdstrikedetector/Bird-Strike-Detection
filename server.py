@@ -229,7 +229,17 @@ REVIEW_TEMPLATE = """
     <thead>
       <tr>
         <th>event_id</th>
-        <th>timestamp</th>
+        <th>
+          {% if sort_order == "desc" %}
+            <a href="{{ url_for('review', sort='asc') }}">
+              timestamp ▼
+            </a>
+          {% else %}
+            <a href="{{ url_for('review', sort='desc') }}">
+              timestamp ▲
+            </a>
+          {% endif %}
+        </th>
         <th>device_id</th>
         <th>x</th>
         <th>y</th>
@@ -453,11 +463,23 @@ def health():
 @app.route("/review", methods=["GET"])
 def review():
     events = load_events()
+
+    # Get sort direction from URL:
+    # /review?sort=desc  -> newest first
+    # /review?sort=asc   -> oldest first
+    sort_order = request.args.get("sort", "desc")
+
+    events.sort(
+        key=lambda row: row.get("timestamp", ""),
+        reverse=(sort_order == "desc")
+    )
+
     return render_template_string(
         REVIEW_TEMPLATE,
         events=events,
         status_choices=STATUS_CHOICES,
         outcome_choices=OUTCOME_CHOICES,
+        sort_order=sort_order,
     )
 
 @app.route("/update/<event_id>", methods=["POST"])
